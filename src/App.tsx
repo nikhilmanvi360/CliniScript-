@@ -4,6 +4,7 @@ import { UploadComponent } from './components/UploadComponent';
 import { Dashboard } from './components/Dashboard';
 import { RecordList } from './components/RecordList';
 import { MRDConfig } from './components/MRDConfig';
+import { LandingPage } from './components/LandingPage';
 import { analyzeClinicalRecord } from './services/geminiService';
 import { AnalysisResult, AuditLog, ClinicalRecord, UserRole, RecordStatus, ComplianceStatus } from './types';
 import { auth, db, handleFirestoreError, OperationType } from './firebase';
@@ -96,6 +97,7 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [searchTerm, setSearchTerm] = useState('');
+  const [isToolLaunched, setIsToolLaunched] = useState(false);
 
   // Test Connection
   useEffect(() => {
@@ -409,6 +411,10 @@ export default function App() {
     );
   }
 
+  if (!isToolLaunched) {
+    return <LandingPage onLaunch={() => setIsToolLaunched(true)} />;
+  }
+
   if (!user) {
     return (
       <div className="h-screen flex flex-col items-center justify-center bg-slate-50 p-6">
@@ -490,7 +496,14 @@ export default function App() {
           )}
         </nav>
 
-        <div className="p-6 border-t border-slate-100 bg-slate-50/50">
+        <div className="p-6 border-t border-slate-100 bg-slate-50/50 space-y-2">
+          <button 
+            onClick={() => setIsToolLaunched(false)}
+            className="flex items-center space-x-3 w-full px-4 py-3 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all font-semibold text-sm"
+          >
+            <Activity className="w-5 h-5" />
+            <span>Home Screen</span>
+          </button>
           <button 
             onClick={handleLogout}
             className="flex items-center space-x-3 w-full px-4 py-3 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all font-semibold text-sm"
