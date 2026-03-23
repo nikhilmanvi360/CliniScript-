@@ -1,0 +1,7 @@
+{
+  "name": "CliniScript AI",
+  "description": "Clinical-grade interface for handwritten patient record transcription, nursing alerts, and MRD compliance tracking.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}

@@ -1,0 +1,108 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: records
+    // Document ID: recordId
+    // Fields:
+    //   - id: string (required)
+    //   - fileName: string (required)
+    //   - imageUrl: string (required)
+    //   - status: string (required, enum: ["Processing", "Completed", "Failed"])
+    //   - mrdStatus: string (required, enum: ["COMPLETE", "INCOMPLETE", "RESOLVED", "FLAGGED"])
+    //   - lastUpdated: string (required)
+    //   - data: object (optional)
+    //   - auditLogs: array (optional)
+    //
+    // Collection: users
+    // Document ID: userId
+    // Fields:
+    //   - uid: string (required)
+    //   - email: string (required)
+    //   - role: string (required, enum: ["Doctor", "Nurse", "MRD Officer"])
+    //   - displayName: string (optional)
+    //
+    // Collection: settings
+    // Document ID: mrd_config
+    // Fields:
+    //   - id: string (required)
+    //   - fields: array (required)
+    //   - updatedBy: string (optional)
+    //   - updatedAt: string (optional)
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        ((exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Doctor') ||
+         request.auth.token.email == "nikhilmanvi360@gmail.com");
+    }
+
+    function isNurse() {
+      return isAuthenticated() && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Nurse';
+    }
+
+    function isMRD() {
+      return isAuthenticated() && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'MRD Officer';
+    }
+
+    function isValidRecord(data) {
+      return data.id is string &&
+             data.fileName is string &&
+             data.imageUrl is string &&
+             data.status in ["Processing", "Completed", "Failed"] &&
+             data.mrdStatus in ["COMPLETE", "INCOMPLETE", "RESOLVED", "FLAGGED"] &&
+             data.lastUpdated is string;
+    }
+
+    function isValidUser(data) {
+      return data.uid is string &&
+             data.email is string &&
+             data.role in ["Doctor", "Nurse", "MRD Officer"];
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow create: if isOwner(userId) && isValidUser(request.resource.data);
+      // Allow role updates for the demo, but only by the owner
+      allow update: if isOwner(userId) && isValidUser(request.resource.data);
+    }
+
+    match /records/{recordId} {
+      allow read: if isAuthenticated();
+      // Only Doctors (admins) can create records
+      allow create: if isAdmin() && isValidRecord(request.resource.data);
+      // All authenticated users can update records (with role-based logic in app)
+      allow update: if isAuthenticated() && isValidRecord(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    match /settings/mrd_config {
+      allow read: if isAuthenticated();
+      allow write: if isMRD() || isAdmin();
+    }
+  }
+}

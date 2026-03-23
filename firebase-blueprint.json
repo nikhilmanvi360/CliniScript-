@@ -1,0 +1,61 @@
+{
+  "entities": {
+    "ClinicalRecord": {
+      "title": "Clinical Record",
+      "description": "A patient clinical record with transcription and analysis",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "fileName": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "status": { "type": "string", "enum": ["Processing", "Completed", "Failed"] },
+        "mrdStatus": { "type": "string", "enum": ["COMPLETE", "INCOMPLETE", "RESOLVED", "FLAGGED"] },
+        "lastUpdated": { "type": "string" },
+        "data": { "type": "object" },
+        "auditLogs": { "type": "array" }
+      },
+      "required": ["id", "fileName", "imageUrl", "status", "mrdStatus", "lastUpdated"]
+    },
+    "UserProfile": {
+      "title": "User Profile",
+      "description": "User profile with role-based access",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "role": { "type": "string", "enum": ["Doctor", "Nurse", "MRD Officer"] },
+        "displayName": { "type": "string" }
+      },
+      "required": ["uid", "email", "role"]
+    },
+    "MRDConfig": {
+      "title": "MRD Configuration",
+      "description": "Customizable checklist fields for MRD compliance",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "fields": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "updatedBy": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["id", "fields"]
+    }
+  },
+  "firestore": {
+    "/records/{recordId}": {
+      "schema": "ClinicalRecord",
+      "description": "Collection of clinical records"
+    },
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "User profiles and roles"
+    },
+    "/settings/mrd_config": {
+      "schema": "MRDConfig",
+      "description": "Global MRD compliance checklist configuration"
+    }
+  }
+}
